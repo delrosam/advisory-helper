@@ -1,0 +1,509 @@
+<div class="col-md-12">
+        <h1>The tool to replace Shawn when he leaves.</h1>
+     
+        <label for="userEmailContentInput">Email Contents (<em>Copy email content and paste in textarea below. Then, click the Parse button</em>):</label>
+        <textarea class="form-control" id="userEmailContentInput" rows="10"></textarea>
+        <br />
+        <p><button type="submit" id="parseEmailContent" class="btn btn-primary">Parse</button> <button type="submit" id="resetForm" class="btn btn-warning">Reset</button></p>
+         
+        <div id="generatedAdvisory"  class="js-hide">
+
+        <div class="row">
+            <div class="col-sm-12">
+                <h2 class="waiver_name"></h2>
+                <p style="display:block">Due to <span class="waiver_name"></span>, flights may be delayed or canceled. Please monitor your flight status regularly. We are offering the following waiver if you would like to change, cancel, or postpone your flight.</p>
+            </div>
+        </div>
+
+
+        <div class="alert alert-warning">
+            <div class="row">
+                <div class="col-sm-4" style="display:block">
+                    <h5>Travel To/From</h5>
+                    <p id="geo_locations"></p>
+                </div>
+        
+                <div class="col-sm-4">
+                    <h5>Tickets Purchased On/Before</h5>
+                    <p id="ticket_purchase">
+                        January 17, 2019
+                    </p>
+
+                    <h5>Original Travel Dates</h5>
+                    <p><span id="original_start"></span> - <span id="original_end"></span></p>
+                </div>
+                <div class="col-sm-4">
+                    <h5>New Travel Dates</h5>
+                    <p>
+                        January 21, 2019 - January 25, 2019
+                    </p>
+                </div>
+        
+                    <div class="col-sm-12">
+                        <h5>Waiver Code</h5>
+                            <p>
+                                <span id="waiver_code_k"></span> (waive change fee/add collect/deposit ticket value to my account)
+                            </p>
+        
+        
+                            <p>
+                                <span id="waiver_code_v"></span> (waive change fee only) 
+                            </p>
+                    </div>
+                <div class="col-sm-12" style="display:block">
+                    <h5>Exception Policy</h5>
+                    <p>We will waive the change fees and the difference in the price of the ticket if the new travel is booked to or from the affected cities in the same cabin and travel is completed during the new travel dates listed above. Additional taxes may apply. You may cancel your ticket and deposit the ticket value to your My Wallet account if you choose not to travel at all. <br>
+        Tickets must be exchanged or canceled prior to the departure of your original flight. <a href="//www.alaskaair.com/booking/reservation-lookup">Rebook your flight</a> or <a href="//www.alaskaair.com/booking/reservation-lookup">cancel your trip</a> online.<br>
+        This waiver is valid only for tickets issued by Alaska Airlines. Tickets can be identified by a 13-digit ticket number beginning with Alaska Airlines code “027”. Tickets issued by other airlines with a different carrier code (ticket numbers not beginning with “027”) are subject to the waiver policy of other airline.</p>
+                </div>
+            </div>
+        </div>
+    </div><!--End of Generated Advisory Layer -->
+</div> <!--End of container div-->
+
+
+<script>
+        // console.log("Hellow");
+        
+        $(function(){
+        
+        
+        
+            var myDataObj = [];
+            var original = "true";
+        
+        
+            var fetchFromObject = function(){
+                $.each(myDataObj, function(i, v){
+                    if(v.id === "waiver_code"){
+                        $("."+v.id).text(v.data);
+                    }else if(v.id === "geo_locations"){
+        
+                        var geos = v.data;
+                        console.log(geos);
+                        geos.forEach((elem) => {
+                            var geo = cleanerThanCode(elem);
+                            $("#"+v.id).append(`${geo} <br />`);
+                        });
+                        // for(var i = 0; i < geos.length; i++){
+                        //     var geo = cleanerThanCode(geos[i]);
+                        //     $("#"+v.id).append(`${geo} <br />`);
+                        // }
+                        
+                    }else if(v.id === "ticket_purchase"){
+                        var myDate = v.data;
+                        myDate = myDate.split('-');
+                        $("#"+v.id).text(`${prettifyMonth(myDate[1])} ${prettifyDay(myDate[2])}, ${myDate[0]}`);  
+            
+                    }else if(v.id === "original_start"){
+                        var myDate = v.data;
+                        myDate = myDate.split('-');
+                        $("#"+v.id).text(`${prettifyMonth(myDate[1])} ${prettifyDay(myDate[2])}, ${myDate[0]}`); 
+                    }else if(v.id === "original_end"){
+                        var myDate = v.data;
+                        myDate = myDate.split('-');
+                        $("#"+v.id).text(`${prettifyMonth(myDate[1])} ${prettifyDay(myDate[2])}, ${myDate[0]}`);  
+                    }else if(v.id === "policy_date_one"){
+                        var myDate = v.data;
+                        myDate = myDate.split('-');
+                        $("#"+v.id).text(`${prettifyMonth(myDate[1])} ${prettifyDay(myDate[2])}, ${myDate[0]}`);
+                    }else if(v.id === "policy_date_two"){
+                        var myDate = v.data;
+                        myDate = myDate.split('-');
+                        $("#"+v.id).text(`${prettifyMonth(myDate[1])} ${prettifyDay(myDate[2])}, ${myDate[0]}`);  
+                    }else if(v.id === "waiver_code_k"){
+                        $("#"+v.id).text(v.data);
+                    }else if(v.id === "waiver_code_v"){
+                        $("#"+v.id).text(v.data);
+                    }else{
+        
+                    }
+                });
+            };
+        
+        
+            $("#resetForm").on("click", function() {
+                console.log("Reset was clicked");
+                $("#generatedAdvisory").addClass("js-hide");
+                myDataObj = [];
+            });
+            
+        
+        
+        
+            $("#parseEmailContent").click(function(){
+                console.log("Parse was clicked");
+                $txtAreaVal = $("#userEmailContentInput").val();
+                //$("#userEmailContentInput").val(""); //Clear textarea value
+                
+                $txtAreaVal = $txtAreaVal.split("\n");
+                //console.log($txtAreaVal);
+        
+                var mySet = new Set();
+                var lastDate = [];
+        
+                $.each($txtAreaVal, function(i, v){
+                    if(v.indexOf("exported to production") > -1){
+                        var waiverCode = v.substring(v.indexOf('Waiver ')+7, v.indexOf(' exported'));
+                        if(waiverCode[0] === 'K'){
+                            addToMyObject('waiver_code_k', waiverCode);
+                            var v_code = waiverCode.replace(/.$/,"V"); //replace last character to a V
+                            v_code = v_code.replace(v_code.charAt(0),"V");
+                            addToMyObject('waiver_code_v', v_code);
+                           
+                        }else if(waiverCode[0] === 'V'){
+                            addToMyObject('waiver_code_v', waiverCode);
+                            var k_code = waiverCode.replace(/.$/,"K"); //replace last character to a K
+                            k_code = k_code.replace(k_code.charAt(0),"V");
+                            addToMyObject('waiver_code_k', k_code);
+                        }
+                    }else if(v.indexOf("Description:") > -1){
+                        var refundDateLastDateGiven = v.substring(v.indexOf('-'), v.length);
+                        refundDateLastDateGiven = refundDateLastDateGiven.trim();
+                        refundDateLastDateGiven = refundDateLastDateGiven.split(" ");
+                        
+        
+                        for(var i = 0; i < refundDateLastDateGiven.length; i++){
+                            if(refundDateLastDateGiven[i].match(/\d/g)){
+                                lastDate.push(refundDateLastDateGiven[i]);
+                            }
+                        }
+        
+                     
+        
+                        var therealdate = lastDate[1];
+        
+                        if(therealdate.indexOf('/') > -1){
+                            therealdate = therealdate.split('/');
+                            therealdate = `20${therealdate[2]}-${therealdate[0]}-${therealdate[1]}`
+                        }else{
+                            if(therealdate.match(/.{1,2}/g) && therealdate.match(/[a-zA-Z]+/g)){
+                               if(therealdate.indexOf('.') > -1){
+                                    therealdate =  therealdate.replace('.','');
+                               }
+                               var tempday = `${therealdate[0]}${therealdate[1]}`;
+                               var tempmonth = `${therealdate[2]}${therealdate[3]}${therealdate[4]}`;
+                               tempmonth = tempmonth.toUpperCase();
+        
+                               if(tempmonth === 'JAN'){
+                                   tempmonth = '01';
+                               }else if(tempmonth === 'FEB'){
+                                    tempmonth = '02';
+                               }else if(tempmonth === 'MAR'){
+                                    tempmonth = '03';
+                               }else if(tempmonth === 'APR'){
+                                    tempmonth = '04';
+                               }else if(tempmonth === 'MAY'){
+                                    tempmonth = '05';
+                               }else if(tempmonth === 'JUN'){
+                                    tempmonth = '06';
+                               }else if(tempmonth === 'JUL'){
+                                    tempmonth = '07';
+                               }else if(tempmonth === 'AUG'){
+                                    tempmonth = '08';
+                               }else if(tempmonth === 'SEP'){
+                                    tempmonth = '09';
+                               }else if(tempmonth === 'OCT'){
+                                    tempmonth = '10';
+                               }else if(tempmonth === 'NOV'){
+                                    tempmonth = '11';
+                               }else if(tempmonth === 'DEC'){
+                                    tempmonth = '12';
+                               }else{
+        
+                               }
+                               //console.log(tempmonth);
+                               therealdate = `${new Date().getFullYear()}-${tempmonth}-${tempday}`;
+                            }
+                        }
+        
+        
+                        addToMyObject('policy_date_two', therealdate);
+        
+                    }else if(v.indexOf("Original Travel") > -1){
+                        original = 'true';
+                    }else if(v.indexOf("Ticket Issue Dates:") > -1){
+                        var ticketPurchaseDate = v.substring(v.indexOf('—')+1, v.length);
+                        ticketPurchaseDate = ticketPurchaseDate.trim();
+                        addToMyObject('ticket_purchase', ticketPurchaseDate);
+        
+                    }else if(v.indexOf("Travel Dates") > -1 && original === 'true'){
+                        var originalTravelStart = v.substring(v.indexOf('—')-10, v.indexOf('—'));
+                        addToMyObject('original_start', originalTravelStart);
+                        var originalTravelEnd = v.substring(v.indexOf('—')+1, v.length);
+                        addToMyObject('original_end', originalTravelEnd);
+                        original = 'false';
+        
+                    }else if(v.indexOf("P:") > -1 || v.indexOf("C:") > -1){
+                        if(v.indexOf("P:") > -1){
+                            var geoLocations = v.substring(v.indexOf('P:')+2, v.length);
+                            geoLocations = geoLocations.trim();
+                        }else if(v.indexOf("C:") > -1){
+                            var geoLocations = v.substring(v.indexOf('C:')+2, v.length);
+                            geoLocations = geoLocations.trim();
+                        }else{}
+        
+                        mySet.add(geoLocations);
+                        
+                    
+                    }else if(v.indexOf("Travel Dates") > -1 && original === 'false'){
+                        var newTravelEnd = v.substring(v.indexOf('—')+1, v.length);
+                        addToMyObject('policy_date_one', newTravelEnd);
+        
+                     }else{}
+        
+        
+                });
+        
+                addToMyObject('geo_locations', mySet);
+        
+                
+               console.log(myDataObj);
+        
+               fetchFromObject();
+        
+               // $("#ticket-purchase").append(ticket);
+        
+                myDataObj = [];
+        
+                $("#generatedAdvisory").removeClass("js-hide");
+        
+            });
+        
+        
+        
+        
+        
+        
+            var addToMyObject = function(id, data) {
+                var myData = {
+                    id,
+                    data
+                };
+                return myDataObj.push(myData);
+            };
+        
+        
+        
+            var prettifyMonth = function(monthNum){
+                var options = {
+                    "01":"January",
+                    "02":"February",
+                    "03":"March",
+                    "04":"April",
+                    "05":"May",
+                    "06":"June",
+                    "07":"July",
+                    "08":"August",
+                    "09":"September",
+                    "10":"October",
+                    "11":"November",
+                    "12":"December"
+            
+                };
+                return options[monthNum];
+            };
+            
+            
+            var prettifyDay = function(dayNum) {
+                switch(dayNum) {
+                    case '01':
+                        return '1';
+                    case '02':
+                        return '2';
+                    case '03':
+                        return '3';
+                    case '04':
+                        return '4';
+                    case '05':
+                        return '5';
+                    case '06':
+                        return '6';
+                    case '07':
+                        return '7';
+                    case '08':
+                        return '8';
+                    case '09':
+                        return '9';
+                    default:
+                        return dayNum;
+                }
+            };
+            
+            
+            
+            var grabMyMonth = function(monthPassed) {
+                var letterMatch = monthPassed.match(/[a-zA-Z]+/g);
+                return prettifyMonth(letterMatch);
+            };
+            
+            
+            
+            var grabMyDay = function(dayPassed) {
+                var numberMatch = dayPassed.match(/\d/g);
+                numberMatch = numberMatch.join("");
+                if(numberMatch.length > 2){
+                    numberMatch = numberMatch.match(/.{1,2}/g);
+                }
+                return prettifyDay(numberMatch);
+            };
+            
+            
+            
+         
+        
+            var airports = {
+                "ABQ":"Albuquerque",
+                "ACV":"Eureka",
+                "ADK":"Adak Island",
+                "ADQ":"Kodiak",
+                "AKN":"King Salmon",
+                "ALW":"Walla Walla",
+                "ANC":"Anchorage",
+                "ATL":"Atlanta",
+                "AUS":"Austin",
+                "BET":"Bethel",
+                "BIL":"Billings",
+                "BLI":"Bellingham",
+                "BNA":"Nashville",
+                "BOI":"Boise",
+                "BOS":"Boston",
+                "BRW":"Barrow",
+                "BUR":"Burbank",
+                "BWI":"Baltimore",
+                "BZN":"Bozeman",
+                "CDV":"Cordova",
+                "CHS":"Charleston",
+                "COS":"Colorado Springs",
+                "CUN":"Cancun",
+                "DCA":"Washington - Reagan",
+                "DEN":"Denver",
+                "DFW":"Dallas",
+                "DLG":"Dillingham",
+                "DTW":"Detroit",
+                "DUT":"Dutch Harbor",
+                "EAT":"Wenatchee",
+                "EUG":"Eugene",
+                "EWR":"New York - Newark",
+                "FAI":"Fairbanks",
+                "FAT":"Fresno",
+                "FCA":"Kalispell",
+                "FLG":"Flagstaff",
+                "FLL":"Ft Lauderdale",
+                "GDL":"Guadalajara",
+                "GEG":"Spokane",
+                "GST":"Glacier Bay",
+                "GST":"Gustavus",
+                "GTF":"Great Falls",
+                "HDN":"Steamboat Springs",
+                "HLN":"Helena",
+                "HNL":"Honolulu",
+                "IAD":"Washington - Dulles",
+                "IAH":"Houston",
+                "IDA":"Idaho Falls",
+                "JFK":"New York - Kennedy",
+                "JNU":"Juneau",
+                "KOA":"Kona",
+                "KTN":"Ketchikan",
+                "LAP":"La Paz",
+                "LAS":"Las Vegas",
+                "LAX":"Los Angeles",
+                "LGB":"Long Beach",
+                "LIH":"Kauai",
+                "LIR":"Liberia, Costa Rica",
+                "LTO":"Loreto",
+                "LWS":"Lewiston",
+                "MCI":"Kansas City",
+                "MCO":"Orlando",
+                "MEX":"Mexico City",
+                "MFR":"Medford",
+                "MIA":"Miami",
+                "MMH":"Mammoth Lakes",
+                "MRY":"Monterey",
+                "MSO":"Missoula",
+                "MSP":"Minneapolis",
+                "MSY":"New Orleans",
+                "MZT":"Mazatlan",
+                "OAK":"Oakland",
+                "OGG":"Maui",
+                "OKC":"Oklahoma City",
+                "OMA":"Omaha",
+                "OME":"Nome",
+                "ONT":"Ontario",
+                "ORD":"Chicago",
+                "OTZ":"Kotzebue",
+                "PDX":"Portland",
+                "PHL":"Philadelphia",
+                "PHX":"Phoenix",
+                "PRC":"Prescott",
+                "PSC":"Pasco",
+                "PSG":"Petersburg",
+                "PSP":"Palm Springs",
+                "PUW":"Pullman",
+                "PVR":"Puerto Vallarta",
+                "RDD":"Redding",
+                "RDM":"Redmond",
+                "RDU":"Raleigh-Durham",
+                "RNO":"Reno",
+                "SAN":"San Diego",
+                "SAT":"San Antonio",
+                "SBA":"Santa Barbara",
+                "SCC":"Prudhoe Bay",
+                "SEA":"Seattle",
+                "SFO":"San Francisco",
+                "SIT":"Sitka",
+                "SJC":"San Jose",
+                "SJD":"Los Cabos",
+                "SJO":"San Jose, Costa Rica",
+                "SLC":"Salt Lake City",
+                "SMF":"Sacramento",
+                "SNA":"Orange County",
+                "STL":"St Louis",
+                "STS":"Santa Rosa",
+                "SUN":"Sun Valley",
+                "TPA":"Tampa",
+                "TUS":"Tucson",
+                "WRG":"Wrangell",
+                "YAK":"Yakutat",
+                "YEG":"Edmonton",
+                "YKM":"Yakima",
+                "YLW":"Kelowna",
+                "YVR":"Vancouver",
+                "YYC":"Calgary",
+                "YYJ":"Victoria",
+                "ZIH":"Ixtapa",
+                "ZLO":"Manzanillo",
+                "MKE":"Milwaukee",
+                "HAV":"Havana",
+                "ICT":"Wichita",
+                "IND":"Indianapolis",
+                "SBP":"San Luis Obispo",
+                "DAL":"Dallas - Love Field",
+                "LGA":"New York - LaGuardia",
+                "PIT":"Pittsburgh",
+                "PAE":"Everett - Paine Field"
+                };
+        
+        
+                var cleanerThanCode = function(allmyairports){
+                    return `${airports[allmyairports]} (${allmyairports})`;
+                };
+            
+        
+        });
+        </script>
+
+
+<style>
+    .loaded-data{
+        color:orangered;
+    }
+    #generatedAdvisory.js-hide{
+        display:none;
+    }
+    #parseEmailContent,
+    #resetForm{
+        border-color:#fff;
+        box-shadow:0 0 0px 0 rgba(0,0,0,0);
+    }
+</style>

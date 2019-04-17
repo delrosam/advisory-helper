@@ -1,0 +1,34 @@
+
+<script>
+    var data_to_pass = {
+        "ItemName": "_marnel-test-advisory6",
+        "TemplateID": "c4b59c60-d16f-4066-b381-75b43adb7ea1",
+        "Advisory Event Description": "Test event description",
+        "Advisory Event": "Marnel Snow Event ",
+    };
+</script>
+
+
+
+<div class="col-md-12">
+    <h1>This section is for Sitecore Item Creation</h1>
+    <button type="button" id="create-item" onclick="makeMyItem(data_to_pass);">Make me an Item</button> 
+</div>
+
+<script>
+    function makeMyItem(data_to_pass){
+        var myJSON = JSON.stringify(data_to_pass);
+        console.log(myJSON);
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/sitecore/api/ssc/item/sitecore%2Fcontent%2FAlaskaAir%2Fcontent%2Fproducers%2Fmarnel-test");
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onreadystatechange = function () {
+            if (this.readyState == 4) {
+                console.log('Status: '+this.status+'\nHeaders:'+JSON.stringify(this.getAllResponseHeaders())+'\nBody: '+this.responseText);
+            }
+        };
+        
+        // xhr.send("{ \n \"ItemName\": \""+item_name+"\", \n \"TemplateID\": \"C4B59C60-D16F-4066-B381-75B43ADB7EA1\", \n \"Advisory Event\": \""+advisory_event+"\", \n \"Advisory Event Description\":\"\\r\\n\\t\\t\u003Cp\u003EWelcome to Sitecore\u003C/p\u003E\\r\\n\" \n}");
+        xhr.send(myJSON);
+    }
+</script>
